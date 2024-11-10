@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>文件上传</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body>
+<h1>文件上传</h1>
+<form id="uploadForm">
+    <input type="file" id="file" name="file" required />
+    <button type="submit">上传文件</button>
+</form>
+<br>
+<div id="progressContainer" style="display: none;">
+    <h3>处理进度: <span id="progressPercent">0%</span></h3>
+    <progress id="progressBar" value="0" max="100"></progress>
+</div>
+<script>
+    $("#uploadForm").on("submit", function (event) {
+        event.preventDefault();
+
+        let formData = new FormData();
+        formData.append("file", $("#file")[0].files[0]);
+
+        $.ajax({
+            url: "/upload",
+            type: "POST",
+            data: formData,
+            contentType: false,
+            processData: false,
+            success: function (taskId) {
+                $("#progressContainer").show();
+                trackProgress(taskId);
+            }
+        });
+    });
+
+    function trackProgress(taskId) {
+        let interval = setInterval(function () {
+            $.get("/progress", { taskId: taskId }, function (progress) {
+                $("#progressPercent").text(progress + "%");
+                $("#progressBar").val(progress);
+
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    alert("处理完成！");
+                    window.location.href = "/download?taskId=" + taskId;
+                }
+            });
+        }, 1000);
+    }
+</script>
+</body>
+</html>
